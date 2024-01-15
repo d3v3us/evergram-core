@@ -1,8 +1,9 @@
 package config
 
 import (
-	"chronio-core/encryption"
 	"os"
+
+	"github.com/deveusss/chronio-core/encryption"
 
 	"github.com/caarlos0/env/v10"
 )

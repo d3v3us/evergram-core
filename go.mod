@@ -1,4 +1,4 @@
-module chronio-core
+module github.com/deveusss/chronio-core
 
 go 1.21.5
 

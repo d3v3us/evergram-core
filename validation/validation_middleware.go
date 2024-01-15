@@ -1,9 +1,10 @@
 package validation
 
 import (
-	"chronio-core/common"
 	"fmt"
 	"strings"
+
+	"github.com/deveusss/chronio-core/common"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
