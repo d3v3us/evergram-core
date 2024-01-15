@@ -38,7 +38,7 @@ type AuthConfig struct {
 	GoogleClientSecret string `env:"GOOGLE_AUTH_CLIENT_SECRET"`
 }
 
-func (auth *AuthConfig) JwtSecret() encryption. {
+func (auth *AuthConfig) JwtSecret() encryption.ISecureString {
 	return encryption.NewSecureString(os.Getenv("JWT_SECRET"))
 }
 
