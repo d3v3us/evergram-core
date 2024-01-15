@@ -3,7 +3,7 @@ package config
 import (
 	"os"
 
-	"github.com/deveusss/chronio-core/encryption"
+	encryption "github.com/deveusss/chronio-core/encryption"
 
 	"github.com/caarlos0/env/v10"
 )
@@ -38,7 +38,7 @@ type AuthConfig struct {
 	GoogleClientSecret string `env:"GOOGLE_AUTH_CLIENT_SECRET"`
 }
 
-func (auth *AuthConfig) JwtSecret() encryption.ISecureString {
+func (auth *AuthConfig) JwtSecret() encryption. {
 	return encryption.NewSecureString(os.Getenv("JWT_SECRET"))
 }
 
