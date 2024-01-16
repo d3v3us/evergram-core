@@ -9,10 +9,8 @@ import (
 )
 
 type AppConfig struct {
-	Name    string `env:"APP_NAME"`
-	Version string `env:"APP_VERSION"`
-	Debug   bool   `env:"APP_DEBUG"`
-	Env     string `env:"APP_ENV"`
+	Debug bool   `env:"APP_DEBUG"`
+	Env   string `env:"APP_ENV"`
 }
 
 type PostgresConfig struct {
