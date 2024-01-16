@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deveusss/chronio-core/common"
+	"github.com/deveusss/evergram-core/common"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"

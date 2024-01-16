@@ -3,7 +3,7 @@ package config
 import (
 	"os"
 
-	encryption "github.com/deveusss/chronio-core/encryption"
+	encryption "github.com/deveusss/evergram-core/encryption"
 
 	"github.com/caarlos0/env/v10"
 )

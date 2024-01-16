@@ -1,4 +1,4 @@
-module github.com/deveusss/chronio-core
+module github.com/deveusss/evergram-core
 
 go 1.21.5
 
