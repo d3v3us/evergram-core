@@ -10,7 +10,7 @@ import (
 type AppCacher interface {
 	Set(key string, value interface{}) error
 	SetWithTTL(key string, value interface{}, duration time.Duration) error
-	Get(key string) (interface{}, error)
+	Get(key string) (interface{}, bool)
 	Delete(key string) error
 	Clear() error
 	Has(key string) (bool, error)
@@ -68,13 +68,13 @@ func (c *AppCache) SetWithTTL(key string, value interface{}, duration time.Durat
 	return nil
 }
 
-func (c *AppCache) Get(key string) (interface{}, error) {
+func (c *AppCache) Get(key string) (interface{}, bool) {
 	// Get value from BigCache
 	entry, ok := c.cache.Get(key)
 	if ok {
-		return entry, nil
+		return entry, ok
 	}
-	return nil, nil
+	return nil, ok
 }
 
 func (c *AppCache) Delete(key string) error {

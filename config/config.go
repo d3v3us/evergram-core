@@ -1,18 +1,24 @@
 package config
 
 import (
+	"flag"
 	"os"
+	"time"
 
 	encryption "github.com/deveusss/evergram-core/encryption"
 
-	"github.com/caarlos0/env/v10"
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
-type AppConfig struct {
-	Debug bool   `env:"APP_DEBUG"`
-	Env   string `env:"APP_ENV"`
+type ConfigurationBase[Configuration any] struct {
+	Config Configuration
 }
 
+type AuthConfig struct {
+	JwtExpiration      int    `env:"JWT_EXPIRATION"`
+	GoogleClientId     string `env:"GOOGLE_AUTH_CLIENT_ID"`
+	GoogleClientSecret string `env:"GOOGLE_AUTH_CLIENT_SECRET"`
+}
 type PostgresConfig struct {
 	Host     string `env:"POSTGRES_HOST"`
 	Port     int    `env:"POSTGRES_PORT"`
@@ -21,47 +27,56 @@ type PostgresConfig struct {
 	Name     string `env:"POSTGRES_DB"`
 }
 
-var config *Configuration
-
-type ServerConfig struct {
-	Host                string `env:"SERVER_HOST"`
-	Port                int    `env:"SERVER_PORT"`
-	RateLimit           int    `env:"SERVER_RATE_LIMIT"`
-	RateLimitExpiration int    `env:"SERVER_RATE_LIMIT_EXPIRATION"`
+type AppConfig struct {
+	Env            string     `yaml:"env" env-default:"local"`
+	GRPC           GRPCConfig `yaml:"grpc"`
+	MigrationsPath string
+	TokenTTL       time.Duration `yaml:"token_ttl" env-default:"1h"`
 }
 
-type AuthConfig struct {
-	JwtExpiration      int    `env:"JWT_EXPIRATION"`
-	GoogleClientId     string `env:"GOOGLE_AUTH_CLIENT_ID"`
-	GoogleClientSecret string `env:"GOOGLE_AUTH_CLIENT_SECRET"`
+type GRPCConfig struct {
+	Port    int           `yaml:"port"`
+	Timeout time.Duration `yaml:"timeout"`
+}
+
+func Load[Configuration any]() *ConfigurationBase[Configuration] {
+	configPath := fetchConfigPath()
+	if configPath == "" {
+		panic("config path is empty")
+	}
+
+	return LoadFromPath[Configuration](configPath)
+}
+
+func LoadFromPath[Configuration any](configPath string) *ConfigurationBase[Configuration] {
+	// check if file exists
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		panic("config file does not exist: " + configPath)
+	}
+
+	var cfg Configuration
+
+	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
+		panic("cannot read config: " + err.Error())
+	}
+
+	return &ConfigurationBase[Configuration]{
+		Config: cfg,
+	}
+}
+func fetchConfigPath() string {
+	var res string
+
+	flag.StringVar(&res, "config", "", "path to config file")
+	flag.Parse()
+
+	if res == "" {
+		res = os.Getenv("CONFIG_PATH")
+	}
+
+	return res
 }
 
 func (auth *AuthConfig) JwtSecret() encryption.ISecureString {
 	return encryption.NewSecureString(os.Getenv("JWT_SECRET"))
-}
-
-type Configuration struct {
-	App      AppConfig      `env:"-"`
-	Database PostgresConfig `env:"-"`
-	Server   ServerConfig   `env:"-"`
-	Auth     AuthConfig     `env:"-"`
-}
-
-func load() *Configuration {
-	config = &Configuration{}
-	if err := env.Parse(config); err != nil {
-		panic(err)
-	}
-	return config
-}
-
-func init() {
-	load()
-}
-
-func Config() *Configuration {
-	if config == nil {
-		panic("config not loaded")
-	}
-	return config
 }
