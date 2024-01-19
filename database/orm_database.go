@@ -6,7 +6,8 @@ import (
 	"log"
 
 	"github.com/deveusss/evergram-core/caching"
-	"github.com/deveusss/evergram-core/database"
+	"github.com/deveusss/evergram-core/config"
+
 	"github.com/eapache/go-resiliency/retrier"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -14,19 +15,19 @@ import (
 
 // OrmDatabase represents a wrapper around gorm.DB
 type OrmDatabase struct {
-	*gorm.DB
+	Orm           *gorm.DB
 	Cache         caching.AppCacher
 	Retry         *retrier.Retrier
 	EnableCaching bool // Flag to enable or disable caching for queries
 	ctx           context.Context
 }
 
-func NewDatabase(config DatabaseConfig) (*OrmDatabase, error) {
-	return NewDatabaseWithContext(context.Background(), config, false)
+func New(config *config.DatabaseConfig) (*OrmDatabase, error) {
+	return NewWithContext(context.Background(), config, false)
 }
 
 // NewDatabaseWithContext creates a new instance of OrmDatabase with context
-func NewDatabaseWithContext(ctx context.Context, config DatabaseConfig, enableCaching bool) (*OrmDatabase, error) {
+func NewWithContext(ctx context.Context, config *config.DatabaseConfig, enableCaching bool) (*OrmDatabase, error) {
 	dsn := buildConnectionString(config)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -54,12 +55,12 @@ func NewDatabaseWithContext(ctx context.Context, config DatabaseConfig, enableCa
 
 	retry := retrier.New(retrier.ExponentialBackoff(config.MaxRetries, config.RetryWait), nil)
 
-	return &OrmDatabase{ctx: ctx, DB: db, Cache: cache, Retry: retry, EnableCaching: enableCaching}, nil
+	return &OrmDatabase{ctx: ctx, Orm: db, Cache: cache, Retry: retry, EnableCaching: enableCaching}, nil
 }
 
 // OpenConnection opens a connection to the database
 func (db *OrmDatabase) OpenConnection() error {
-	innerDb, err := db.DB.DB()
+	innerDb, err := db.Orm.DB()
 	if err != nil {
 		log.Printf("Failed when getting inner DB: %v", err)
 		return err
@@ -69,7 +70,7 @@ func (db *OrmDatabase) OpenConnection() error {
 
 // CloseConnection closes the connection to the database
 func (db *OrmDatabase) CloseConnection() error {
-	innerDb, err := db.DB.DB()
+	innerDb, err := db.Orm.DB()
 	if err != nil {
 		log.Printf("Failed when getting inner DB: %v", err)
 		return err
@@ -79,7 +80,7 @@ func (db *OrmDatabase) CloseConnection() error {
 
 // WithTransactionWithContext executes a function inside a transaction with context
 func (db *OrmDatabase) WithTransactionContext(context context.Context, fn func(*OrmDatabase) error) error {
-	tx := db.WithContext(context).Begin()
+	tx := db.Orm.WithContext(context).Begin()
 	if tx.Error != nil {
 		log.Printf("Error beginning transaction: %v", tx.Error)
 		return tx.Error
@@ -104,7 +105,7 @@ func (db *OrmDatabase) WithTransactionContext(context context.Context, fn func(*
 }
 
 // buildConnectionString builds the database connection string for PostgreSQL
-func buildConnectionString(dbConfig database.DatabaseConfig) string {
-	return fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
-		dbConfig.Username, dbConfig.Password, dbConfig.Host, dbConfig.Port, dbConfig.Name)
+func buildConnectionString(dbConfig *config.DatabaseConfig) string {
+	return fmt.Sprintf("user=%s password=%s host=%s port=%d dbname=%s sslmode=disable",
+		dbConfig.User, dbConfig.Password, dbConfig.Host, dbConfig.Port, dbConfig.Name)
 }

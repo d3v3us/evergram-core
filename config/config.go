@@ -11,32 +11,49 @@ import (
 )
 
 type ConfigurationBase[Configuration any] struct {
-	Config Configuration
+	Config *Configuration
 }
-
-type AuthConfig struct {
-	JwtExpiration      int    `env:"JWT_EXPIRATION"`
-	GoogleClientId     string `env:"GOOGLE_AUTH_CLIENT_ID"`
-	GoogleClientSecret string `env:"GOOGLE_AUTH_CLIENT_SECRET"`
-}
-type PostgresConfig struct {
-	Host     string `env:"POSTGRES_HOST"`
-	Port     int    `env:"POSTGRES_PORT"`
-	User     string `env:"POSTGRES_USER"`
-	Password string `env:"POSTGRES_PASSWORD"`
-	Name     string `env:"POSTGRES_DB"`
+type DatabaseConfig struct {
+	Host           string `yaml:"host"`
+	Port           int    `yaml:"port"`
+	User           string `yaml:"user"`
+	Password       string `yaml:"password"`
+	MigrationsPath string
+	Name           string        `yaml:"name"`
+	CacheTTL       time.Duration `yaml:"cache_ttl" env-default:"5m"`
+	MaxRetries     int           `yaml:"max_retries" env-default:"3"`
+	RetryWait      time.Duration `yaml:"retry_wait" env-default:"5s"`
 }
 
 type AppConfig struct {
-	Env            string     `yaml:"env" env-default:"local"`
-	GRPC           GRPCConfig `yaml:"grpc"`
-	MigrationsPath string
-	TokenTTL       time.Duration `yaml:"token_ttl" env-default:"1h"`
+	Env        string         `yaml:"env" env-default:"local"`
+	GRPC       GRPCConfig     `yaml:"grpc"`
+	DbConfig   DatabaseConfig `yaml:"db"`
+	AuthConfig AuthConfig     `yaml:"auth"`
+}
+type JwtConfig struct {
+	TokenTTL time.Duration `yaml:"token_ttl" env-default:"1h"`
+	Secret   string        `yaml:"secret"`
 }
 
+func (c *JwtConfig) GetSecret() encryption.ISecureString {
+	return encryption.NewSecureString(c.Secret)
+}
+
+type ExternalAuthConfig struct {
+	Google GoogleAuthConfig `yaml:"google"`
+}
+type GoogleAuthConfig struct {
+	GoogleClientId     string `yaml:"google_client_id"`
+	GoogleClientSecret string `yaml:"google_client_secret"`
+}
 type GRPCConfig struct {
 	Port    int           `yaml:"port"`
 	Timeout time.Duration `yaml:"timeout"`
+}
+type AuthConfig struct {
+	ExternalAuthConfig ExternalAuthConfig `yaml:"external"`
+	Jwt                JwtConfig          `yaml:"jwt"`
 }
 
 func Load[Configuration any]() *ConfigurationBase[Configuration] {
@@ -61,7 +78,7 @@ func LoadFromPath[Configuration any](configPath string) *ConfigurationBase[Confi
 	}
 
 	return &ConfigurationBase[Configuration]{
-		Config: cfg,
+		Config: &cfg,
 	}
 }
 func fetchConfigPath() string {
