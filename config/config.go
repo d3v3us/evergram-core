@@ -23,6 +23,8 @@ type DatabaseConfig struct {
 	CacheTTL       time.Duration `yaml:"cache_ttl" env-default:"5m"`
 	MaxRetries     int           `yaml:"max_retries" env-default:"3"`
 	RetryWait      time.Duration `yaml:"retry_wait" env-default:"5s"`
+	MaxIdleConns   int           `yaml:"max_idle_conns" env-default:"5"`
+	MaxOpenConns   int           `yaml:"max_open_conns" env-default:"10"`
 }
 
 type AppConfig struct {
@@ -92,8 +94,4 @@ func fetchConfigPath() string {
 	}
 
 	return res
-}
-
-func (auth *AuthConfig) JwtSecret() encryption.ISecureString {
-	return encryption.NewSecureString(os.Getenv("JWT_SECRET"))
 }
